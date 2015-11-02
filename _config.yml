@@ -9,3 +9,6 @@ permalink:    /:year/:month/:day/:title/
 # Build settings
 markdown: kramdown
 
+kramdown:
+  syntax_highlighter: rouge
+
