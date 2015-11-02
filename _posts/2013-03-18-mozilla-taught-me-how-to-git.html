@@ -1,0 +1,105 @@
+---
+layout: post
+title: Mozilla taught me how to Git
+date: 2013-03-18 17:02:20.000000000 +02:00
+type: post
+published: true
+status: publish
+categories:
+- FED
+tags:
+- git
+- mozilla
+- ranbena
+meta:
+  _edit_last: '22'
+  dsq_thread_id: ''
+author:
+  login: ranbena
+  email: ran@doat.com
+  display_name: Ran Ben Aharon
+  first_name: Ran
+  last_name: Ben Aharon
+---
+<p>Working with Mozilla on Firefox OS in the past year gave us the privilege of familiarizing ourselves with Git best practices. Their strict collaboration process felt annoying at first but its true value revealed itself many times. Keeping a specific branch structure and using those normally untouched git commands make for a minimum friction workflow with a distributed team of developers.</p>
+<p>I am not a Git master just yet. There's much to learn, understand and utilize. But I do know how to get myself out of version control messes and lead frustration free collaboration. Here are the basic guidelines.<br />
+<!--more--></p>
+<h1>Master branch and feature branches</h1>
+<p>First rule of thumb - never edit <em>master</em> directly. It should be a mirror image of production. Only work on <em>feature</em> branches and merge finalized work to it.</p>
+<p>Common branch structure:</p>
+{% highlight bash%}
+- master
+    - christmas-design
+    - mobile
+    - perf-optimization
+{% endhighlight %}
+<p>&nbsp;</p>
+<p>Why? Let me show you an oh too common hotspot a developer finds himself in and how correct branching makes it so simple to work through.</p>
+<p>You got an existing website in production. It's almost christmas and a holiday design should be ready for deployment by then. You're working on it and things are going smooth.</p>
+<p><strong>Uh oh!</strong> There's a bug on production! Go fix it NOW!<br />
+Now, before branches we used to work directly on <em>master</em>. Which now includes unfinished, untested christmas code that's not scheduled for production yet. That's not an ideal state to work in. Now, you gotta copy code aside or download from production or put conditions which add unnecessary risk to the version.<br />
+Moreover, the code might have changed so much to the point that you can't reproduce the bug. This is when developers become frustrated and burdened.</p>
+<p>Branches and structure to the rescue.<br />
+Instead of working on <i>master</i> you start work on <i>christmas-design</i> branch.<br />
+Confronted with the bug fix request, commit or stash your current work, move to master branch, create a new branch <em>bugfix</em> and move to it.</p>
+<p><script src="https://gist.github.com/ranbena/5185463.js?file=christmas1.sh"></script></p>
+<p>Now, you got the same code as does production. Work on the fix, commit, move to master, merge feature branch into it and deploy.</p>
+<p><script src="https://gist.github.com/ranbena/5185463.js?file=christmas2.sh"></script></p>
+<p>Yeah! Back to work!</p>
+<p><script src="https://gist.github.com/ranbena/5185463.js?file=christmas3.sh"></script></p>
+<p>When you’re done getting the website all snowy and glowy and it’s time for deployment, all that's needed is a simple merge to <i>master</i>, deploy. You can now safely delete the <i>christmas-design</i> branch to keep your branch list relevant.</p>
+<h1>Take it further with version branches</h1>
+<p>For projects that manage multiple versions, it's common to have branches for every version, like so:</p>
+{% highlight bash%}
+- master
+  - v1.0
+    - christmas-design
+    - mobile
+    - perf-optimization
+  - v2.0
+    - responsive-design
+    - video-page
+{% endhighlight %}
+<p>&nbsp;</p>
+<p>What for?</p>
+<ol>
+<li>It's apparent what version you're working on.</li>
+<li>Even if <em>master</em> advanced to <em>v2.0</em>, <em>v1.0</em> code remains available for peeking</li>
+<li>Every feature branch is derived from a version branch. This makes for easier and safer merging. That's the next subject actually.</li>
+</ol>
+<h1>Merging - keep your Git history clean</h1>
+<p>A simple merge will usually merge in the commits, and create a new "merged" commit. This is called a three-way merge. Apart from it messing up the git history, it makes for history and hash differences between branches. It's confusing and troublesome at specific cases and basically unnecessary. Moreover, it's a Pull Request reviewer's nightmare.</p>
+<p>The clean alternative to three-way merging is fast-forwarding. This can be achieved only if the merged branches have identical commit chain and refs (excluding from the new commits). So, instead of merging we use a command called <a href="http://git-scm.com/book/en/Git-Branching-Rebasing" target="_blank">rebase</a>.</p>
+<p>Rebasing means the branch changes are recommitted on top of an updated base branch. Let's say you're about to merge in the <em>christmas-design</em> branch into <em>v1.0</em>. We first rebase the branch, resolve any conflicts, and then merge cleanly into <em>v1.0</em>.</p>
+<p><script src="https://gist.github.com/ranbena/5185463.js?file=christmas5.sh"></script></p>
+<p>Let's look at the difference between the two:</p>
+<div class="clearfix">
+<div style="float: left; width: 49%;">
+<h2>git rebase</h2>
+<p>Concise, chronological, clean</p>
+<p><script src="https://gist.github.com/ranbena/5185463.js?file=git-log-rebase.sh"></script></p>
+</div>
+<div style="float: right; width: 49%;">
+<h2>git merge</h2>
+<p>Unnecessary "merged" commit, confusing order </p>
+<p><script src="https://gist.github.com/ranbena/5185463.js?file=git-log-merge.sh"></script></p>
+</div>
+</div>
+<p>A word of caution! Use <code>rebase</code> wisely. It changes the commit hash so if anyone pulled your work beforehand, they're in for an unpleasant surprise of conflicts. Rule of thumb - don't rebase if you already pushed to remote.</p>
+<h1>Even cleaner</h1>
+<p>You know how you work on one feature and eventually end up with multiple commits that make their way into the <em>master</em> git log? Wouldn't it be great if you could group 'em all into one commit?</p>
+<p>That's where <a href="http://git-scm.com/book/en/Git-Tools-Rewriting-History#Changing-Multiple-Commit-Messages" target="_blank">interactive rebasing</a> comes in. When you're done working on a branch, rebase it so it's up to date and all commits are stacked at the top, it's time for the <code>rebase -i</code> command.</p>
+<p>Count the number of commits you want to "squash" together. In this example it's 14.</p>
+<p><script src="https://gist.github.com/ranbena/5185463.js?file=rebase-i.sh"></script></p>
+<p>And the rest is history. Just not in the Git history...</p>
+<p>There are more useful commands for a clean Git log like <code>commit --amend</code> and <code>cherry-pick</code>.</p>
+<h1>Linking commits to issue tracker tickets</h1>
+<p>How many times have you looked at a piece of code and asked "Why the @!*# is this here? Who decided on this?". Mozilla enforces a strict naming and linking convention so that you could trace a line of code to its original issue tracker ticket. That way you could find out what features it's a part of, review a discussion about it and know whom to approach.</p>
+<p>So the workflow is like this:<br />
+1. Get the ticket id of the issue / feature.<br />
+2. Make sure you supply one git commit and prefix the message with the ticket id.<br />
+3. If the commit is accessible via web - add a link to it within the ticket.</p>
+<p>For example, <a href="https://github.com/EverythingMe/gaia/commit/15e203515779a0dc7d913064084dd6aa81a3c200" target="_blank">here's a commit</a> and its <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=834227" target="_blank">corresponding ticket</a>.</p>
+<h1>Summary</h1>
+<p>I've dealt with all sorts of Version Control Systems and though I have had Git for a while now, working with Mozilla opened up a world of ease and a sense that you're doing something right. Keep your Git log clean, branch sensibly and your collaborators won't kick you off projects.</p>
+<p>Special thanks to <a href="https://github.com/crdlc" target="_blank">crdlc</a> and <a href="https://github.com/vingtetun" target="_blank">vingtetun</a>.</p>

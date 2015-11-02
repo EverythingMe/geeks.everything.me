@@ -1,0 +1,33 @@
+---
+layout: post
+title: IRC integration in Everything.me
+date: 
+type: post
+published: false
+status: draft
+categories: []
+tags: []
+meta:
+  _edit_last: '14'
+author:
+  login: omrib
+  email: omrib@everything.me
+  display_name: omrib
+  first_name: Omri
+  last_name: Bahumi
+---
+<p>Hello everyone,</p>
+<p>We've recently introduced a new service for Everything.me employees for better collaboration - an internal IRC server to communicate with each other.<br />
+The idea sat in our CTO's mind (Joey Simhon) for a while, until some of our employees (including Joey) went for a week in Germany to work on FirefoxOS (Mozilla work week).<br />
+Aside from regular chat, the IRC has also introduced a new way to be notified on certain events and make collaboration even better! During the work week, tickets and bug reports were posted to IRC, alongside with GIT commits to Mozilla's repositories.</p>
+<p>I've been assigned with the task of implementation of something similar, as I'm an old IRC user (been using IRC since 1994 or so...).<br />
+The requirements were simple enough - IRC server, ZNC (IRC bouncer) and GitHub's Hubot (node.js based robot with IRC support) - with lots of cool scripts to enhance its functionality.</p>
+<p>I started off by installing ratbox-ircd (EFNet's IRCd), ZNC and Hubot with IRC adapter. The ZNC's job is to keep a chat buffer while you're offline and let you login simultaneously with multiple clients (and use the same nickname).<br />
+Then, I've installed <a href="https://github.com/github/hubot" target="_blank">Hubot</a> with the <a href="https://github.com/nandub/hubot-irc" target="_blank">IRC adapter</a>, and installed some <a href="https://github.com/github/hubot-scripts" target="_blank">community scripts</a>.<br />
+The bigger task was to integrate Hubot with our systems:</p>
+<ul>
+<li>Hudson - our build server</li>
+<li>Redmine - our ticketing/bug reports system</li>
+<li>Gitlab - our GIT repositories system</li>
+</ul>
+<p>The cool thing about Hubot is it has great integration with HTTP - it's written with node.js after all. It's very simple to send messages to the chat room based on HTTP requests the bot received.</p>

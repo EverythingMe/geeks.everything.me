@@ -1,0 +1,87 @@
+---
+layout: post
+title: Android Test Automation at EverythingMe
+date: 2015-06-02 17:52:08.000000000 +03:00
+type: post
+published: true
+status: publish
+categories:
+- Android
+- Open Source
+- Python
+- Test Automation
+tags: []
+meta:
+  _edit_last: '2'
+  _oembed_2f9c048629e1f99c9e96459ac9730cd0: <iframe width="500" height="281" src="https://www.youtube.com/embed/1BvpfCoCUqg?feature=oembed"
+    frameborder="0" allowfullscreen></iframe>
+  _oembed_time_2f9c048629e1f99c9e96459ac9730cd0: '1433429025'
+  _oembed_936b73fb9e0bc030c8f3f0371a39b726: <iframe width="500" height="281" src="https://www.youtube.com/embed/Sww6TSYRcgo?feature=oembed"
+    frameborder="0" allowfullscreen></iframe>
+  _oembed_time_936b73fb9e0bc030c8f3f0371a39b726: '1431891769'
+  dsq_thread_id: ''
+  _oembed_598d6ccbf082cae826df854132f66ef5: <iframe width="500" height="281" src="https://www.youtube.com/embed/wDPfbhAaqZI?feature=oembed"
+    frameborder="0" allowfullscreen></iframe>
+  _oembed_time_598d6ccbf082cae826df854132f66ef5: '1433958911'
+  _aioseop_keywords: automation, magneto, qa, qa engineering, automation engineering,
+    android, device lab, methodology, testing
+author:
+  login: ranbena
+  email: ran@doat.com
+  display_name: Ran Ben Aharon
+  first_name: Ran
+  last_name: Ben Aharon
+---
+<p>Android app development is at the core of EverythingMe. We’ve recently moved to a weekly release cycle (we call them pulses) and we knew from the start that moving this fast requires <a href="http://jonjagger.blogspot.ie/2011/07/why-do-cars-have-brakes.html">good brakes</a> and that meant that automated testing is bound to play a key role.</p>
+<p>My team (automation &amp; tools) was tasked with creating a UI automation suite that is consistent, visible, easy to adopt by devs and trusted to stop the train when needed.</p>
+<p>When we started, we had a year-old suite of UI tests that was:</p>
+<ul>
+<li>Executed as a side-track on a slave build-server</li>
+<li>Had poor reporting and visibility</li>
+<li>Tried to do too much - running similar tests on Android, Firefox OS and iOS</li>
+<li>Produced flaky and inconsistent results</li>
+<li>Tests were written in a self-defined vocabulary and by a single person</li>
+<li>Was hard to set up and get going</li>
+</ul>
+<p>The bottom line was simple yet painful - we’ve put a lot of effort into a tool that holds great promise but doesn’t fulfil its role and no one uses or trusts.</p>
+<h1>The right tool for the job</h1>
+<p>We were using <a href="http://appium.io">Appium</a> along with <a href="http://robotframework.org/">Robot Framework</a> for quite some time and found ourselves struggling constantly to make it work, let alone making it work well and consistently. It was also a challenge getting people involved and active due to the complexity of installation and maintenance. We had to find out if there’s a tool that would suit us better.</p>
+<p>Since we’re big on open source (<a href="http://everythingme.github.io">check this out</a>), we wanted to find out what the big boys were doing. Here’s what we got:</p>
+<ul>
+<li>eBay - <a href="http://calaba.sh/">Calabash</a> (ruby)</li>
+<li>Mozilla - <a href="https://wiki.mozilla.org/Auto-tools/Projects/Robocop">Robocop</a> (java)</li>
+<li>Soundcloud - <a href="https://code.google.com/p/robotium/">Robotium</a> (java)</li>
+<li>Facebook - <a href="http://selendroid.io/">Selendroid</a> (java)</li>
+<li>Yelp - <a href="https://code.google.com/p/android-test-kit/wiki/Espresso">Espresso</a> (java)</li>
+<li>Groupon - <a href="https://github.com/groupon/robo-remote">RoboRemote</a> (java)</li>
+</ul>
+<h2>Our considerations</h2>
+<p>Java based frameworks were off the table for us, since we felt the language doesn’t lend itself to all involved in writing tests. Python, Javascript and Ruby were a better match.</p>
+<p>Calabash was turned down due to difficulties we encountered running tests with Cucumber.</p>
+<p>Appium was a better fit but it posed a few problems. Having the intermediate Appium server raised recurring technical and performance issues (and since EverythingMe is Android only, we had no use of the advantages this feature presents), Selenium syntax felt messy but most importantly we encountered a <a href="https://github.com/appium/java-client/issues/74#issuecomment-64672526">crucial issue</a> that kept us from moving forward.</p>
+<h2>Magneto is born</h2>
+<p>We ended up taking a <a href="https://github.com/xiaocong/uiautomator">Python wrapper of uiautomator</a> and started working on our homebrew Android UI Automation framework - <a href="http://getmagneto.com">Magneto</a>.</p>
+<p>Didn’t take more a few weeks to transform the pace of our product flow and get people excited about and trusting our automated tests results. WIN!</p>
+<p>Here’s Magneto in action. Super easy setup and fast and simple execution.<br />
+<iframe width="500" height="281" src="https://www.youtube.com/embed/wDPfbhAaqZI" frameborder="0" allowfullscreen></iframe></p>
+<h3>Here’s everything you need to get started</h3>
+<p>GitHub repo <a href="https://github.com/EverythingMe/magneto">https://github.com/EverythingMe/magneto</a><br />
+Web site <a href="http://getmagneto.com">getmagneto.com</a></p>
+<h1>The method to the madness</h1>
+<p>It’s not enough to have great tools. It’s the methodology they’re being used with, that allows them to shine. The way we hook everything up is bound to the following principles we’ve conceived over the years:</p>
+<h2>Immediate Feedback</h2>
+<p>When you’ve experienced it the other way around, you know how frustrating and exhausting debugging can be, when alerted of regression after sequential commits have packed on. It can also break one’s spirit, constantly returning to seemingly resolved tasks.</p>
+<p>Make sure developers can run tests locally so they don’t have to wait in line for results. Perhaps consider it as a pre-commit hook.</p>
+<p>Trigger tests on each CI server build and notify everyone involved of the results.</p>
+<p>Make sure test suites are as lean as possible so it won’t take long to get feedback. It requires careful test reviewing and constant observation. Worth it.</p>
+<h2>True brakes</h2>
+<p>One of the most common illnesses of test automation integrations, is that test results are disregarded as irrelevant or faulty, thus losing their actual meaning. The way we chose to deal with this is by placing test results as blockers to successive jobs.</p>
+<p>In practice, non-passing feature branches are programmatically unable to land on the master branch. Moreover, failed builds won’t make it to our beta channel until they pass.</p>
+<p>It may be harsh, but it succeeds in making automated test failures everyone’s problem. The desired side effect is that they stay relevant and keep evolving.</p>
+<h2>It’s everybody’s business</h2>
+<p>Automated tests are often the responsibility of Automation engineers. We witnessed that this tends to create disengagement of the developer and QA teams with tests and their results.</p>
+<p>It’s important to let everyone involved be a part of creating tests and be responsible for them passing. Automation engineers are enablers, providing a framework, assisting in understanding failures and making sure servers and lab devices are up and running.</p>
+<h1>Great success</h1>
+<p>It hasn’t been a smooth ride and we’re often required to reevaluate and revamp. But the big picture shows that test automation done right, proves itself invaluable. Our whole development and release process has become fast and safe and we intend to keep pushing forward so this stays true all throughout our journey.</p>
+<p>&nbsp;</p>
+<div style="background-color: #1c1c1c;padding: 20px;color: white; line-height: 21px;">I’ll be <a style="color: #a8de25" href="https://events.bizzabo.com/droidcontlv2015/agenda/session/106011">talking about Magneto</a> at <a style="color: #a8de25" href="http://il.droidcon.com/2015/">DroidCon IL 2015</a> June 11th.<br />Catch me afterwards for a talk about Automation and EverythingMe.</div>

@@ -1,0 +1,189 @@
+---
+layout: post
+title: Roll your own artifacts repository with AWS S3
+date: 2014-11-18 16:37:12.000000000 +02:00
+type: post
+published: true
+status: publish
+categories:
+- Open Source
+- Operations
+tags:
+- artifact
+- docker
+- maven
+- open source
+- pypi
+- python
+- s3
+meta:
+  _edit_last: '4'
+  _oembed_ca057a99874842a6021e64dbd9fe0a79: '{{unknown}}'
+  _oembed_67eed75412df1f8acfb4d94739db9f9a: '{{unknown}}'
+  dsq_thread_id: ''
+author:
+  login: eddie
+  email: eddie@everything.me
+  display_name: Eddie Mishelevich
+  first_name: Eddie
+  last_name: Mishelevich
+---
+<p>At <strong>EverythingMe</strong> we rely on <a href="https://thrift.apache.org/" target="_blank">Thrift</a> to manage the communication between our heterogeneous system of micro services and Android application.</p>
+<p>We recently created a protocols repository with all our .<em>thrift</em> files describing various structs and services and a metadata file containing a version and compilation and packaging instructions. A tool we created uses these instructions and generates artifacts for each of the languages we use (Python and Go for backend services and Java for our Android app).</p>
+<p>We wanted to deploy these artifacts, and preferably be compatible with the language's eco-system, so PyPi for Python, Git for Go and Maven for Java. (We're also experimenting with Docker, so we thought a private docker-registry would be cool.)</p>
+<p>We evaluated several commercial "<em>artifact solutions</em>" but we didn't feel comfortable with any of them, then we thought "we run on AWS and already rely  on S3 - it's safe, secure and reliable, why not just store the artifacts there?", so with the help of open source tools and some duck tape, here's how we rolled our own artifacts repositories for <strong>PyPi</strong>, <strong>Maven</strong> and <strong>Docker</strong> over <strong>S3</strong>.</p>
+<h2>You’ll need:</h2>
+<ul>
+<li>AWS account with S3 access credentials</li>
+<li>Open source magic</li>
+</ul>
+<p>S3 provides a secure and reliable way to store <em>stuff</em>, so we’d like to store our artifacts there yet still speak the standard interfaces our repositories use and love.</p>
+<h1>Maven:</h1>
+<p>For <em>deploying</em> to S3, it’s just a matter of adding the following extension to your <strong><em>pom.xml</em></strong> file:</p>
+<pre class="lang:default decode:true ">&lt;build&gt;
+   &lt;extensions&gt;
+       &lt;extension&gt;
+           &lt;groupId&gt;org.springframework.build.aws&lt;/groupId&gt;
+           &lt;artifactId&gt;org.springframework.build.aws.maven&lt;/artifactId&gt;
+           &lt;version&gt;3.0.0.RELEASE&lt;/version&gt;
+       &lt;/extension&gt;
+   &lt;/extensions&gt;
+&lt;/build&gt;</pre>
+<p>&nbsp;</p>
+<p>This will allow you do use <strong>s3://</strong> uri’s in the repository section of <strong><em>pom.xml</em></strong>:</p>
+<pre class="lang:default decode:true ">&lt;distributionManagement&gt;
+   &lt;repository&gt;
+     &lt;uniqueVersion&gt;true&lt;/uniqueVersion&gt;
+     &lt;id&gt;s3_maven&lt;/id&gt;
+     &lt;url&gt;s3://BUCKET-NAME/release/&lt;/url&gt;
+     &lt;layout&gt;default&lt;/layout&gt;
+   &lt;/repository&gt;
+&lt;/distributionManagement&gt;</pre>
+<p>&nbsp;</p>
+<p>And of course, you’ll need to associate <em>s3_maven</em> repository id, with a username and passphrase in <em><strong>~/.m2/settings.xml</strong></em>:</p>
+<pre class="lang:default decode:true">&lt;servers&gt;
+   &lt;server&gt;
+     &lt;id&gt;s3_maven&lt;/id&gt;
+     &lt;username&gt;S3_ACCESS_KEY&lt;/username&gt;
+     &lt;passphrase&gt;S3_SECRET_KEY&lt;/passphrase&gt;
+   &lt;/server&gt;
+  &lt;/servers&gt;
+&lt;/settings&gt;</pre>
+<p>That’s it, now you can issue <em><strong>mvn deploy</strong></em>, and it maven will deploy this artifact to your s3 bucket.<br />
+Now for the tricky part: public S3 buckets can be used as maven repositories out of the box (without indexing), but for a private S3 bucket you'll need a proxy that signs and translates S3 requests.<br />
+Luckily, there's a <a href="https://github.com/anomalizer/ngx_aws_auth">Nginx plugin</a> that does just that. Recompile Nginx with this plugin, and configure it with your S3 bucket credentials.</p>
+<pre class="lang:default decode:true ">server {
+       listen     18000;
+ 
+       location / {
+           proxy_pass http://BUCKET-NAME.s3.amazonaws.com;
+ 
+           aws_access_key S3_ACCESS_KEY;
+           aws_secret_key S3_SECRET_KEY;
+           s3_bucket BUCKET_NAME;
+ 
+           proxy_set_header Authorization $s3_auth_token;
+           proxy_set_header x-amz-date $aws_date;
+       }
+}</pre>
+<p>You can direct your browser to <a href="http://localhost:18000/">http://localhost:18000/</a> to make sure it work, you should get the XML file listing of your S3 bucket.</p>
+<p>Then, In the <strong><em>gradle.build</em></strong> script you simple set:</p>
+<pre class="lang:default decode:true ">repositories {
+   maven {
+       url 'http://localhost:18000/release/'
+   }
+}
+dependencies {
+       compile 'GROUP_ID:ARTIFACT_ID:VERSION'
+}</pre>
+<p>That’s it, gradle will go to your local proxy, and fetch the artifact.</p>
+<p>(Note: You should add some basic authentication and https, checkout the Docker example further down.)</p>
+<h1>PyPi:</h1>
+<p>Again, thanks to open source, there's a <a href="https://github.com/mathcamp/pypicloud">PyPi server</a> that can use S3 as it's backend.</p>
+<p>Installation is simple (checkout the git repo for Docker container example)</p>
+<pre class="lang:default decode:true ">mkdir mypypi
+cd mypypi
+virtualenv .pyenv
+source .pyenv/bin/activate
+pip install pypicloud waitress
+pypicloud-make-config -t server.ini
+pserve server.ini</pre>
+<p>During pypicloud-make-config you’ll be asked for your S3 details and bucket name, and you’ll also create a basic authentication user</p>
+<p>Add your new pypi index to<em><strong> ~/.pypirc</strong></em></p>
+<pre class="lang:default decode:true">[distutils]
+index-servers = pypicloud
+
+[pypicloud]
+repository = http://localhost:6543/pypi/
+username = PYPICLOUD_USER
+password = PYPI_CLOUD_PASSWORD</pre>
+<p>And now you can upload Python packages to S3!</p>
+<pre class="lang:default decode:true ">python setup.py sdist upload -r pypicloud</pre>
+<p>If you want to use this index for Pip, then set it as your index-url in <em><strong>~/.pip/pip.conf</strong></em></p>
+<pre class="lang:default decode:true ">[global]
+index-url = http://PYPICLOUD_USER:PYPICLOUD_PASSWORD@localhost:6543/pypi/</pre>
+<p>(Note: by default PyPiCloud will just redirect to https://pypi.python.org for any packages it doesn’t have, you can configure it to cache these packages in S3 too, read the docs!)</p>
+<h1>Docker:</h1>
+<p>Inspired by this <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-a-private-docker-registry-on-ubuntu-14-04">guide</a></p>
+<p>Docker registry already supports S3 out of the box, just issue:</p>
+<pre class="lang:default decode:true ">docker run \
+-e SETTINGS_FLAVOR=s3 \
+-e AWS_BUCKET=mybucket \
+-e STORAGE_PATH=/registry \
+-e AWS_KEY=myawskey \
+-e AWS_SECRET=myawssecret \
+-p 5000:5000 \
+registry</pre>
+<p>But we want authentication, and https, so lets put an Nginx proxy in front of it, here’s a sample config:</p>
+<pre class="lang:default decode:true ">upstream docker-registry {
+  server localhost:5000;
+}
+ 
+server {
+  listen 8080;
+  server_name YOUR.DOMAIN.NAME
+ 
+  ssl on;
+  ssl_certificate /etc/ssl/certs/docker-registry;
+  ssl_certificate_key /etc/ssl/private/docker-registry;
+ 
+  proxy_set_header Host       $http_host;
+  proxy_set_header X-Real-IP  $remote_addr;
+ 
+  # disable any limits to avoid HTTP 413 for large image uploads
+  client_max_body_size 0;
+ 
+  # required to avoid HTTP 411:
+  # see Issue #1486 https://github.com/dotcloud/docker/issues/1486)
+  chunked_transfer_encoding on;
+ 
+  location / {
+    # let Nginx know about our auth file
+    auth_basic              "Restricted";
+    auth_basic_user_file    docker-registry.htpasswd;
+ 
+    proxy_pass http://docker-registry;
+  }
+ 
+  location /_ping {
+    auth_basic off;
+    proxy_pass http://docker-registry;
+  } 
+ 
+ 
+  location /v1/_ping {
+    auth_basic off;
+    proxy_pass http://docker-registry;
+  }
+}</pre>
+<p>Check the link above on instructions to how to create certificates and basic auth file.</p>
+<p>To test it works, tag an image and push it to your new registry!</p>
+<pre class="lang:default decode:true">docker login https://YOUR.DOMAIN.NAME:8080
+docker tag IMAGE_NAME YOUR.DOMAIN.NAME:8080/IMAGE_NAME
+docker push YOUR.DOMAIN.NAME:8080/IMAGE_NAME</pre>
+<h1>Recap</h1>
+<p>To quote Brian Kernighan and Rob Pike regarding the Unix philosophy:</p>
+<blockquote>
+<p style="padding-left: 30px;"><em>"Even though the UNIX system introduces a number of innovative programs and techniques, no single program or idea makes it work well. Instead, what makes it effective is the approach to programming, a philosophy of using the computer. Although that philosophy can't be written down in a single sentence, at its heart is the idea that the power of a system comes more from the relationships among programs than from the programs themselves. Many UNIX programs do quite trivial things in isolation, but, combined with other programs, become general and useful tools."</em></p>
+</blockquote>
+<p>In this above case, we chose simple open source tools we can completely understand, patch or replace to build an artifact service. We aimed for leveraging existing tooling of the languages we're using by communicating in well known protocols like PyPi and Maven. We used  S3 to mitigate the hassle of data integrity and availability. The servers themselves don't hold any data, so if a node crashes we simply start another, and because it's stateless we can keep a couple of nodes under a load balancer when high availability is important, like in the Docker case.</p>

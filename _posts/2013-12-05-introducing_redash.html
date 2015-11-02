@@ -1,0 +1,48 @@
+---
+layout: post
+title: Our take on querying visualizing and sharing analytics data
+date: 2013-12-05 15:17:47.000000000 +02:00
+type: post
+published: true
+status: publish
+categories:
+- Analytics
+- hackathing
+- Open Source
+tags: []
+meta:
+  _edit_last: '10'
+  dsq_thread_id: ''
+author:
+  login: arikfr
+  email: arik@everything.me
+  display_name: Arik Fraimovich
+  first_name: Arik
+  last_name: Fraimovich
+---
+<h1 dir="ltr">tl;dr</h1>
+<p dir="ltr">We’ve been using Amazon Redshift as our analytics database and needed a better way to collaborate on queries, visualization and dashboards. So we <a href="http://github.com/everythingme/redash" target="_blank">built it</a>.</p>
+<h2 dir="ltr"><a href="https://github.com/everythingme/redash"><img class="alignnone" alt="" src="{{ site.baseurl }}/assets/screenshots.gif" width="599" height="338" /></a></h2>
+<p><!--more--></p>
+<h1 dir="ltr">Background</h1>
+<p dir="ltr" style="text-align: left;">We're collecting events across client applications (e.g. <a href="https://play.google.com/store/apps/details?id=me.everything.launcher" target="_blank">Everything Home for Android</a>) and server side components and needed a coherent and full analytics view and ability to query across those events in a single place. In the early days we chose Splunk to do our events analysis and analytics. Splunk is a great tool, but it’s meant for operational logs rather than analytics and we reached the point when Splunk just didn't cut it anymore. We could have probably made it work for us longer but it felt like the wrong place to put our time and effort into.</p>
+<p dir="ltr">We switched to using <a href="http://aws.amazon.com/redshift/">Amazon Redshift</a> as our analytics database, but have been left with no "UI" solution. At this point we tried several traditional BI suites, but we discovered bloated approach and unanswered technical challenges. The tools we tried failed to work with a columnar storage built to hold huge amounts of data in general or Redshift in specific, and to top that the process required to operate them felt slow and put the tool in the middle. I personally feel  that the world of BI has so much history (read: legacy) behind it which makes the default implementations and approaches very far from how we roll engineering and culture wise.</p>
+<p dir="ltr">So our data sits in Redshift, and all you need is to know enough SQL to be dangerous and start pulling out insights, you start querying the data and voila you have nice dataset to play with in your favorite spreadsheet tool. Soon enough queries start flying around in email threads, people start sharing their unique and quirky ways to abuse sql and Redshift and attach spreadsheet files. At that point you lose your hands and legs trying to figure out which version of the query from the thread is the correct one.</p>
+<p dir="ltr">We tried <a href="http://chart.io/">Chart.io</a>, which was more inline with our needs, but even with it SQL queries were not first class citizens and it was missing collaboration features that were needed to compliment the way we worked.</p>
+<p dir="ltr">As no ready-made solution was to be found, we decided to try and create our own solution at our 24 hours hackathon event (aka #hackAthing) - <em><a href="http://github.com/everythingme/redash">re:dash</a></em>. <em><a href="http://github.com/everythingme/redash">re:dash</a></em> was built under the assumption that we're not afraid to let users write raw queries to access their data, but we also want to give them rich tools to work with data and collaborate around it with their peers.</p>
+<p dir="ltr">While querying the data requires you to be familiar with SQL, the idea is that other users will be able to participate by using existing datasets.</p>
+<h1 dir="ltr">Current Status</h1>
+<p dir="ltr"><em>re:dash</em> consists of two parts:</p>
+<ul>
+<li dir="ltr">
+<strong>Query Editor</strong>: think of <a href="http://jsfiddle.net/">JS Fiddle</a> for SQL queries. It's your way to share data in the organization in an open way, by sharing both the dataset and the query that generated it. This way everyone can peer review not only the resulting dataset but also the process that generated it. Also it's possible to fork it and generate new datasets and reach new insights.
+</li>
+<li dir="ltr">
+<strong>Dashboards/Visualizations</strong>: once you have a dataset, you can create different visualizations out of it, and then combine several visualizations into a single dashboard. Currently it supports bar charts, pivot table and cohorts.
+</li>
+</ul>
+<p>This is the first release, which is more than usable but still has its rough edges and way to go to fulfill its full potential. The Query Editor part is quite solid, but the visualizations need more work to enrich them and to make them more user friendly.</p>
+<p dir="ltr">It should be quite simple to install on your own server, but also on Heroku. And if you need help to get started, please contact us -- we’re happy to help.</p>
+<h1 dir="ltr">Vision</h1>
+<p dir="ltr">Our vision is to create a tool that lets you easily create meaningful datasets, collaborate around it and share the information in a visual way.</p>
+<p dir="ltr">The current <em><a href="http://github.com/everythingme/redash">re:dash</a></em> state is just the first step in this direction, we're sharing its near future <a href="https://github.com/EverythingMe/redash#roadmap">roadmap</a> and would love to collaborate with others with similar needs as either users or contributors.</p>

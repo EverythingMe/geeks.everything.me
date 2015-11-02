@@ -1,0 +1,86 @@
+---
+layout: post
+title: Why we like WebP
+date: 2013-04-24 15:12:21.000000000 +03:00
+type: post
+published: true
+status: publish
+categories: []
+tags:
+- everything.me
+- image compression
+- speed
+- webp
+meta:
+  _edit_last: '22'
+  dsq_thread_id: ''
+  _aioseop_description: We evaluated WebP, and found that it compresses app icons
+    to half the size of similar quality JPEG, while keeping the alpha channel (that
+    JPEG lacks).
+author:
+  login: admin
+  email: devops@doat.com
+  display_name: evmegeeks
+  first_name: evmegeeks
+  last_name: ''
+---
+<h1>tl;dr:</h1>
+<ul>
+<li>We evaluated WebP, and found that it compresses app icons to half the size of similar quality JPEG, while keeping the alpha channel (that JPEG lacks).</li>
+<li>WebP at 75% compression is equivalent in perceived quality to JPEG at 90% compression.</li>
+<li>We went ahead and made our Android app use WebP.</li>
+</ul>
+<p><!--more-->If you haven't already tried Everything.me Home, let us tell you a bit about <a href="http://www.youtube.com/watch?v=LfEcHi3tmKY&amp;lc&amp;hd=1">what it is</a>:<br />
+Basically, we turn your phone to a dynamic phone, and by Dynamic we mean providing relevant apps in context to user queries on Android and Firefox OS phones. You tell us what you want -- we show you a mix of apps -- installed, native and HTML5.<br />
+(although really, just go <a href="https://play.google.com/store/apps/details?id=me.everything.launcher&amp;referrer=utm_source%3Dgeeksblog">download the app</a>, it's free and rather nice, in our opinion)</p>
+<p>It looks like this:</p>
+<p><img class="alignnone size-full wp-image-644" title="Screenshot of Everything.me Home" alt="Screenshot of Everything.me Home" src="{{ site.baseurl }}/assets/screenshot.png" width="288" height="512" /></p>
+<p>This means that for every key stroke from our users, we respond with lots of icons.</p>
+<p>We employ some clever caching on the client side, and optimize as much as we can (more on that in future posts) -- but that still results in lots of icons sent from our servers.</p>
+<p>And we want to send those icons fast, and strive to be faster still.</p>
+<p>When examining our search API payload, it's easily noticeable that icons take the better part of it, plus we wanted to send icons with transparency back to our clients and PNG was a no-go because that would make our API response size too big.</p>
+<p>We started musing with the option of using WebP, a relatively new image format that <a href="http://blog.chromium.org/2010/09/webp-new-image-format-for-web.html">Google introduced a couple of years ago</a>, to serve all those icons and save us from the dreaded bloated API response. The specs are awesome: better lossy compression than JPEG at the same file size (or same quality with much smaller files), and real alpha channels, so we could display nifty transparent icons on top of cool looking ever-changing backgrounds.</p>
+<p>And it is open source, patent free, and already supported on <a href="https://en.wikipedia.org/wiki/WebP#Support">recent versions of Android, Chrome and Opera</a>.</p>
+<p>But before going full steam ahead, we had to find out for ourselves if WebP is really all it says it is.</p>
+<p>Before we'll show you the full results, let's try a guessing game: can you spot the differences (aside from 50% reduction in file size) between the twins below?</p>
+<p>One was encoded in WebP, the other in JPEG. See if you can you tell which is which.</p>
+<p><img class="alignleft size-full wp-image-647" title="Lossy compressed twin" alt="Lossy compressed twin" src="{{ site.baseurl }}/assets/max-1.png" width="336" height="302" /><img class="alignright size-full wp-image-648" title="Lossy compressed twin" alt="Lossy compressed twin" src="{{ site.baseurl }}/assets/max-2.png" width="336" height="302" /><br />
+<small>(We converted both back to PNG so you can't cheat)</small></p>
+<p>Now for the results of our little case study in compressing icons with WebP, which as you can guess, shows it delivers on its promise.</p>
+<h1>What we did</h1>
+<p>We started with a set of 1000 app icons from the Google Play Store and compressed each to a WebP file, using the default quality setting of 75 (out of 100).</p>
+<p>We then used a method called <a href="http://www.cns.nyu.edu/lcv/ssim/">structural similarity</a> (SSIM, for short), to find out how similar the compressed image is to the original image. That gave us an empirical estimate of how lossy the compression was.</p>
+<div class="box">Structural similarity is based on the idea that the structure of objects in a picture is encoded in pixels that are close together. If we retain the similarity at the local scale, then the whole image would show us the same things. DSSIM is the distance between the source images and the compressed one. where a value of 0 means the two images are the same, and the larger the value, the more distant the images are (it's also a logarithmic scale, so each change is double the one before).</div>
+<p>&nbsp;</p>
+<p>We then took each icon, and again compressed it as JPEG.</p>
+<p>We iterated over the JPEG quality setting, until we found one that provided a similar similarity index to that we got from WebP.</p>
+<p>To be fair towards JPEGs, as they can not encode an alpha channel, we didn't take the alpha values into account when calculating similarity for JPEGs. And we gave JPEG another handicap: we tried to err towards having our JPEGs more lossy than our WebPs.</p>
+<p>The results were better than we hoped for:</p>
+<table>
+<tbody>
+<tr>
+<td></td>
+<td>Average ratio to original PNG size</td>
+<td>Average DSSIM</td>
+</tr>
+<tr>
+<td>WebP</td>
+<td>20.4%</td>
+<td>0.09126</td>
+</tr>
+<tr>
+<td>JPEG</td>
+<td>40.4% (with alpha channel removed)</td>
+<td>0.09961 (compared to source without alpha channel)</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<p>Just look at the chart -- no matter the size of the source images, WebP always won, beating JPEG by half (and having full alpha as well)</p>
+<p><img class="alignnone size-full wp-image-651" title="WebP to JPEG compression ratio" alt="Chart of WebP to JPEG compression ratio" src="{{ site.baseurl }}/assets/webp-to-jpeg.png" width="640" height="480" /></p>
+<p>If you care for the gritty details, you can find the full report on our <a href="https://github.com/EverythingMe/webp-test">GitHub repo</a> that includes the<br />
+code used for testing as well.</p>
+<h1>What's next</h1>
+<p>Well, we went ahead and implemented support for WebP on our both our backend and relevant client platforms that can use it.</p>
+<p>Until then, you can try it yourself: try and test your own images, and tell us how much you saved.</p>
+<p>Oh, and the twins? The one on the right is JPEG.</p>

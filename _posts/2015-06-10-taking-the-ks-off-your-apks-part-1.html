@@ -1,0 +1,243 @@
+---
+layout: post
+title: Shaving K's off your APK (part 1) - gradle super splits (abi + density + phone-tablet
+  flavors)
+date: 2015-06-10 21:17:49.000000000 +03:00
+type: post
+published: true
+status: publish
+categories:
+- Android
+- gradle
+- Open Source
+tags: []
+meta:
+  _edit_last: '4'
+  _post_restored_from: a:3:{s:20:"restored_revision_id";i:1030;s:16:"restored_by_user";i:4;s:13:"restored_time";i:1434003652;}
+  dsq_thread_id: ''
+  _aioseop_keywords: gradle, splits, phone, tablet, abi, density, optimized, apk,
+    android
+author:
+  login: rotem
+  email: rotem@everything.me
+  display_name: Rotem Mizrachi-Meidan
+  first_name: Rotem
+  last_name: Mizrachi-Meidan
+---
+<p>EverythingMe had a long time running bug related to orientation change, caused by the (crazy fact in 3...2...1...) fact that View will not get the Activity's onConfigurationChange() when it's not attached. The bug manifested in phones, although they were programmatically configured to dump any orientation change events, some did slip in as the launcher activity started while phone is in landscape mode, causing the views to not receive the programatic forced portrait configuration change, and keep the landscape resources loaded when in portrait mode.</p>
+<h1>The original solution</h1>
+<p>While looking for a solution, we determined that the best solution for us would be totally eliminating configuration changes on phones (while keeping everything operational for tablets). Gradle's apk splits seemed like the perfect solution. Moreover, it will shrink our user-facing APK size and lower our resource count (no tablet resources on the phone builds), making it much faster to install with Android's package installer.</p>
+<p>Android Tools Project have released abi splits around v0.14 of com.android.tools.build:gradle, and density splits around v1.0 (?) (I couldn't find the actual version where it was released), but at the time of writing these lines, there still is no built-in solution for phone-tablet apk splits.</p>
+<p>I came across <a href="https://groups.google.com/forum/#!msg/adt-dev/8igxEyihIlc/gk4b8K6ZxNYJ">this thread in google groups</a>. Douglas Ferguson and Matthew Townsend came up with a solution (a bit hacky, but hey, it works!). The solution involves manipulation on the AndroidManifest.xml files at build time. Gradle creates different versions the project's resources in intermediates directory, just before they are wrapped into the final APKs.<br />
+But this solution stopped working after gradle 0.6.3, and after digging into changes in gradle's source code I came back with these findings:</p>
+<ol>
+<li>There was a gradle api change: variant.processManifest.doLast has been moved deeper into output.processManifest.doLast</li>
+<li>intermediate manifest files have been moved from <em>build/filtered_manifested/${variant.name}/AndroidManifest.xml</em> to <em>${buildDir}/intermediates/manifests/full/${screenSize}/${density}/${abi}/${buildType}/AndroidManifest.xml</em></li>
+</ol>
+<p>Let's see how the revised solution works:</p>
+<h1>Background</h1>
+<p>First, we'll need to take a look at the gradle configuration of a density splitted apk:</p>
+<pre class="lang:gradle decode:true ">density {
+    enable project.splitApks
+    exclude "ldpi", "tvdpi", "xxxhdpi"
+    compatibleScreens 'small', 'normal', 'large', 'xlarge'
+}
+</pre>
+<p>When we add the compatibleScreens tag in density splits configuration, gradle will add the following lines in each splitted manifest file (this example is taken for the xhdpi manifest):</p>
+{% highlight xml%}
+  <compatible-screens>
+   <screen android:screenDensity="xhdpi" android:screenSize="small">
+   <screen android:screenDensity="xhdpi" android:screenSize="normal">
+   <screen android:screenDensity="xhdpi" android:screenSize="large">
+   <screen android:screenDensity="xhdpi" android:screenSize="xlarge">
+</compatible-screens>
+{% endhighlight %}
+<h1>Splitting time</h1>
+<p>In order to split the apks to phones and tablets we thought that removing the android:screenSize="xlarge" line from phone builds, we'd be able to easily tell google play to distribute this build only to phones. Taking a closer look showed us that Android largeScreens refers both to 5'' devices and 7'' devices, therefore in here google notes:</p>
+<p>NOTE: Android 3.2 introduces new attributes: android:requiresSmallestWidthDp, android:compatibleWidthLimitDp, and android:largestWidthLimitDp. If you're developing your application for Android 3.2 and higher, you should use these attributes to declare your screen size support, instead of the attributes based on generalized screen sizes.<br />
+So by using both requiresSmallestWidthDp and xScreens google play developer console will both distribute the correct APK to big screen phones and tablets, and show what screen layout the specific APK supports (this example is taken for the same phone-xhdpi manifest).</p>
+{% highlight xml %}
+<supports-screens
+   android:anyDensity="true"
+   android:largeScreens="true"
+   android:normalScreens="true"
+   android:smallScreens="true"
+   android:xlargeScreens="false"
+   android:requiresSmallestWidthDp="240" >
+   {% endhighlight %}
+<p>We also removed the android:screenSize="xlarge" from every phone build:</p>
+{% highlight xml %}
+<compatible-screens>
+   <screen android:screenDensity="xhdpi" android:screenSize="small">
+   <screen android:screenDensity="xhdpi" android:screenSize="normal">
+   <screen android:screenDensity="xhdpi" android:screenSize="large">
+</compatible-screens>
+{% endhighlight %}
+<p>and the corresponding xhdpi tablet manifest:</p>
+{% highlight xml %}
+<supports-screens
+   android:anyDensity="false"
+   android:largeScreens="false"
+   android:normalScreens="false"
+   android:smallScreens="false"
+   android:xlargeScreens="true"
+   android:requiresSmallestWidthDp="600" >
+   {% endhighlight %}
+{% highlight xml %}
+<compatible-screens>
+   <screen android:screenDensity="xhdpi" android:screenSize="large">
+   <screen android:screenDensity="xhdpi" android:screenSize="xlarge">
+</compatible-screens>
+{% endhighlight %}
+<h1>Configuration</h1>
+<p>The splitting was done using two (three actually) different productFlavors, each configuring the following manifestPlaceholders</p>
+<p><b>build.gradle</b></p>
+<pre class="lang:gradle theme: decode:true ">productFlavors {
+   if (!project.splitApks) {
+       // a universal build for all device types
+       universal {
+           manifestPlaceholders = [
+                   configChanges: "keyboardHidden|orientation|screenSize",
+                   xlargeScreens: "true",
+                   largeScreens : "true",
+                   normalScreens: "true",
+                   smallScreens : "true",
+                   requiresSmallestWidthDp : "240"
+           ]
+       }
+   }
+   else {
+       phone {
+           manifestPlaceholders = [
+               // phones will receive no onConfigurationChanged events!
+                configChanges: "",
+                xlargeScreens: "false",
+                largeScreens : "true",
+                normalScreens: "true",
+                smallScreens : "true",
+                requiresSmallestWidthDp : "240"
+           ]
+       }
+       tablet {
+           manifestPlaceholders = [
+                   configChanges: "keyboardHidden|orientation|screenSize",
+                   xlargeScreens: "true",
+                   largeScreens : "true",
+                   normalScreens: "false",
+                   smallScreens : "false",
+                   // makes sore only tablets get this apk on Google Play
+                   requiresSmallestWidthDp : "600"
+           ]
+       }
+   }
+}
+</pre>
+<p>Corresponding <strong>AndroidManifest.xml</strong> lines:</p>
+{% highlight xml%}
+  <supports-screens
+    android:xlargeScreens="${xlargeScreens}"
+    android:largeScreens="${largeScreens}"
+    android:normalScreens="${normalScreens}"
+    android:smallScreens="${smallScreens}"
+    android:requiresSmallestWidthDp="${requiresSmallestWidthDp}"
+    android:anyDensity="true" >
+</supports-screens>
+{% endhighlight %}
+<p>Back to <strong>build.gradle</strong>, this is a basic apk split setup:</p>
+<pre class="lang:gradle decode:true ">splits {
+    abi {
+        enable project.splitApks
+        reset()
+        include  'armeabi', 'armeabi-v7a','x86'
+        universalApk true
+    }
+
+    density {
+        enable project.splitApks
+        exclude "ldpi", "tvdpi", "xxxhdpi"
+        compatibleScreens 'small', 'normal', 'large', 'xlarge'
+    }
+}
+</pre>
+<p>This is where all the magic happens:</p>
+{% highlight java %}
+// map for the version code, you can do whatever calculation you want here, as long as it applies
+// to google's documentation in http://developer.android.com/google/play/publishing/multiple-apks.html
+def versionCodesAbi = ['armeabi': 1, 'armeabi-v7a': 2, 'x86': 3]
+def versionCodesDensity = [all: 0, mdpi: 1, hdpi: 2, xhdpi: 3, xxhdpi: 4]
+
+def versionCodesScreenSize = [phone: 0, tablet: 1]
+// these groups represent which screen size the script should exclude in every flavour
+def screenSizeExcludeGroups = [tablet: ["small", "normal"], phone: ["xlarge"]]
+
+task getVersionCode() {
+    if (project.splitApks) {
+       android.applicationVariants.all  { variant ->
+           // assign different version code for each output
+           println "Preparing outputs for " + variant
+           variant.outputs.each { output ->
+               def abiOffset = 0
+               def abi = output.getFilter(com.android.build.OutputFile.ABI)
+               if (abi != null) {
+                   abiOffset = versionCodesAbi.get(abi)
+               }
+
+               def densityOffset = 0
+               def density = output.getFilter(com.android.build.OutputFile.DENSITY)
+               if (density != null) {
+                   densityOffset = versionCodesDensity.get(density) * 4 //shift left by 2
+               }
+
+               def screenSize = 'phone'
+               def screenSizeOffset = 0
+               if (output.name.startsWith("tablet")) {
+                   screenSize = 'tablet'
+                   screenSizeOffset = 32 //turn on 6th bit
+               }
+
+               output.versionCodeOverride = screenSizeOffset +
+                                            abiOffset +
+                                            densityOffset +
+                                            (android.defaultConfig.versionCode)
+               println "versionCode= " + output.versionCodeOverride + "    name= " + output.name
+
+               def buildType = output.name.endsWith("Release") ? "release" : "debug"
+               println "buildType " + buildType
+
+               if (abi == null) { abi = ""}
+               if (density == null) { density = ""}
+
+               if (project.splitApks) {
+                   def manifestFile =
+                   "${buildDir}/intermediates/manifests/full/${screenSize}/${density}/${abi}/${buildType}/" +
+                   "AndroidManifest.xml"
+                   // These lines were automatically added in densitySplits by using compatibleScreens,
+                   // this removes unnecessary screenSize declerations.
+                   output.processManifest.doLast {
+                       for (String key : screenSizeExcludeGroups.get(screenSize)) {
+                           replace_in_file(manifestFile,
+                           "<screen\s*android:screenDensity=\".*\"\s*android:screenSize=\"${key}\" >", "")
+                      }
+                  }
+               }
+           }
+       }
+   }
+}
+
+/*
+ * Replaces a string in a file
+ */
+def replace_in_file(filePath, fromString, toString) {
+    def updatedContent = new File(manifestFile).getText('UTF-8').replaceAll(fromString, toString)
+    new File(manifestFile).write(updatedContent, 'UTF-8')
+}
+{% endhighlight %}
+<h1>Bottom line</h1>
+<p>We managed to create 40 different APKs:<br />
+2 productFlavors (phone/tablet)<br />
+4 abi splits (armeabi/armeabi-v7/x86/universal)<br />
+5 densities (mdpi/hdpi/xhdpi/xxhdpi/universal)</p>
+<p>We stopped the dreaded bug, and shrunk user facing APKs by over 2MBs!</p>
+<p>Let's take a glimpse at our dev console...</p>
+<p><img class="alignnone size-medium wp-image-999" src="{{ site.baseurl }}/assets/apksplits-console-607x688.png" alt="apksplits-console" width="607" height="688" /></p>

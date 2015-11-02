@@ -1,0 +1,21 @@
+---
+layout: default
+---
+
+<article class="post type-post status-publish format-standard hentry">
+  {% for post in site.posts %}
+    <header class="entry-header">
+      <h1 class="entry-title">
+        <a href="{{ post.url | prepend: site.baseurl }}" title="Permalink to {{ post.title }}" rel="bookmark">{{ post.title }}</a>
+      </h1>
+      <div class="entry-meta">
+        <time class="entry-date" datetime="{{ post.date | date: "%b %-d, %Y" }}" pubdate="">{{ post.date | date: "%b %-d, %Y" }}</time>
+        <span class="by-author">
+          <span class="sep"> by </span>
+          <span class="author vcard">{{ post.author.display_name }}</span>
+        </span>
+      </div><!-- .entry-meta -->
+
+    </header><!-- .entry-header -->
+  {% endfor %}
+  </article>

@@ -1,0 +1,87 @@
+---
+layout: post
+title: Adventures with Disque
+date: 2015-05-03 16:01:38.000000000 +03:00
+type: post
+published: true
+status: publish
+categories: []
+tags: []
+meta:
+  _edit_last: '3'
+  _oembed_d0797da153a99a0a5d7cd904a58eb051: '{{unknown}}'
+  dsq_thread_id: ''
+author:
+  login: dvirsky
+  email: dvir@everything.me
+  display_name: dvirsky
+  first_name: Dvir
+  last_name: Volk
+---
+<p>&nbsp;</p>
+<p><b>TL;DR Disque is a new distributed job-queue from the author of redis. It shows great promise and is pretty easy to work with, but not yet ready for prime time. I know because I wrote a Go library for it.</b></p>
+<p>Salvatore Sanfilippo, <a href="http://redis.io" target="_blank">the author of redis</a>, seems to be into reinventing wheels: redis alone includes homebrew asynchronous networking stack, string library, malloc replacement and even a command-line shell. Normally that would not be a good thing - but the thing is, when he reinvents a wheel, it usually turns out to be an awesome wheel.</p>
+<p>That’s why I was intrigued when he announced that he is working on<a href="https://github.com/antirez/disque" target="_blank"> a new distributed queue project called Disque</a>, that will use redis’ protocol and aforementioned wheels. We’ve actually used redis as the backend for our task processing queue for a while, and while it lacked HA and scale-out abilities out of the box, it did do the job well enough that we could postpone moving to a more scalable solution (RabbitMQ) for quite some time.</p>
+<p>So having redis’ top-notch performance and simple philosophy in a robust, scalable distributed job-queue seems like a good idea, even if there are tons of queues already out there (a good chunk of redis’ usage itself is actually as a queue engine). Disque is not yet production grade according to its author, but it was released last week for people to start working with it.</p>
+<p>So I figured a good way to dive in would be to just write a client library for it. So I did. Over a couple of days I wrote a couple of things with it (I’d like to thank Salvatore for providing me with some help and guidance when working this):</p>
+<ul>
+<li><b><a href="https://github.com/EverythingMe/go-disque/" target="_blank">go-disque</a></b>, the low level Go client library for Disque, implementing the commands and random selection connection pool</li>
+<li><b><a href="http://godoc.org/github.com/EverythingMe/go-disque/tasque" target="_blank">Tasque</a>, </b>a task processing library for easy execution of methods on remote servers;</li>
+<li><b><a href="http://godoc.org/github.com/EverythingMe/go-disque/disqchan" target="_blank">Disqchan</a></b>, a library that abstracts disque as cross-network Go channels.</li>
+</ul>
+<p>Below is an overview of Disque from my perspective. I didn’t go into the very complicated implementation details of the cluster protocol and its properties as a distributed system (there is tons of documentation about it in Disque itself). I’ll leave evaluating those aspects to the <a href="https://aphyr.com/posts/281-call-me-maybe-carly-rae-jepsen-and-the-perils-of-network-partitions" target="_blank"><b>Aphyrs</b> of the world</a>. My impressions are from the perspective of a user and a client developer.</p>
+<h1>How Disque works, in a nutshell</h1>
+<ul>
+<li><b><b>It’s based on the redis engine</b>. </b>It uses the redis protocol, networking stack, cli interface, etc etc - but none of its data-structures.</li>
+</ul>
+<ul>
+<li><b><b>It’s masterless.</b></b> it is a peer-to-peer system in which all nodes have an equal role. There is no leader election going on behind the scenes. You can enqueue and consume jobs on every server. This means the client should just select random nodes. Under the hood it uses a gossip protocol for peer discovery, and exposes the list of nodes to the client.</li>
+</ul>
+<ul>
+<li><strong>It uses synchronous replication of jobs. </strong>When you enqueue a job, you can specify how many nodes must receive it before it’s considered queued. Optionally you can disable this and make the replication async.</li>
+</ul>
+<ul>
+<li>It can be used as a <strong>message bus or a job queue.</strong></li>
+<li>It has both <b>at-least-once and at-most-once</b> delivery semantics. You can specify retries for job processing and it will reque jobs if a consumer fails to ACK them.</li>
+</ul>
+<p>&nbsp;</p>
+<h1>The Good</h1>
+<p>All in all the couple of days I spent writing the client and the higher level libraries were a very pleasant experience.</p>
+<ul>
+<li><b><b>It leverages redis’ infrastructure really well. </b> </b>Using the redis protocol means disque clients can be based on redis clients, which is exactly what I did - basing go-disque on the excellent redigo redis client. The persistence mechanism, config semantics and command-line interface - make you feel right at home as a redis user.</li>
+</ul>
+<ul>
+<li><b>Operating and configuration are dead simple</b>. Basically, just start a node, tell it about at least another node in the cluster (CLUSTER MEET), and the cluster takes care of everything autonomously. No need for Sentinel - Disque is its own sentinel.</li>
+</ul>
+<ul>
+<li><b><b>The API is simple and mostly straightforward. </b></b>There are three main commands - ADDJOB, GETJOB and ACK. They are pretty self explanatory in what they do, but you do need to understand their parameters, especially for ADDJOB. Then there are a couple of lower level commands like QPEEK, QLEN, etc which I didn’t use in my implementations, and the usual INFO/PING/CONFIG commands you know from redis. Writing the basic client was really a breeze.</li>
+</ul>
+<ul>
+<li><b><b>It seems pretty fast for its maturity level</b>. </b>Even Though Salvatore states that <i>“</i><i>Disque is completely not optimized for speed, was never profiled so far”</i>, I was able to enqueue about 50,000 jobs a second with a single producer thread on my laptop. I didn’t do any serious consumer/producer benchmarks, but it seems to be in the right direction.</li>
+</ul>
+<p>&nbsp;</p>
+<h1>The Not-as-good</h1>
+<ul>
+<li><b>Some semantics are a bit hard to follow</b>. the ADDJOB command has 9 parameters, of which six are optional and four are timeouts:</li>
+</ul>
+<p style="margin-left: 30px; padding-left: 10px; border-left: 2px solid #a0a0a0;"><code><br />
+ADDJOB queue_name job &lt;ms-timeout&gt; [REPLICATE &lt;count&gt;] [DELAY &lt;sec&gt;] [RETRY &lt;sec&gt;] [TTL &lt;sec&gt;] [MAXLEN &lt;count&gt;] [ASYNC]<br />
+</code></p>
+<p>&nbsp;</p>
+<p style="padding-left: 30px;">You really have to understand how Disque operates to understand the desired values for all of them. (As a sidenote, 9 parameters for a function call can be a bit annoying in a language like Go, that doesn’t support default arguments and method overloading)</p>
+<ul>
+<li><b>It lacks the ability to wait for a job</b>. Let’s say I want to know that the message has been ACKed or failed - there is no simple way to do it. I can, in my application or client, use a special queue for the return result of that job, and wait on that queue, or queue failed jobs in a special queue. But it would be nice to have something like a <b>WAIT &lt;jobId&gt; </b>command in the API.</li>
+</ul>
+<ul>
+<li>I’ve encountered some very slow deliveries in some situations. Under certain conditions receiving an enqueued job took a few seconds. This stems from the distributed nature of Disque in ways that are beyond the scope here, and should not happen in high workloads according to Salvatore.</li>
+</ul>
+<ul>
+<li><b>It lacks some other basic functionality</b> - like clearing a queue, explicit retry limit (it can be done by combining TTL and RETRY),</li>
+</ul>
+<ul>
+<li><b>It’s still young</b>.  While I didn’t find any huge bugs in my small testing environment, I did bump into some issues, including a few <del>under heavy load and with big queues</del> <em>[Correction - the huge queue issues was due to mis-configuration of the maximum allowed memory]</em>. I would definitely not put Disque in production for now.</li>
+</ul>
+<p>&nbsp;</p>
+<h1>Chicken and Egg</h1>
+<p>The above problems are very understandable considering the age of Disque. But here’s the thing - It’s a bit of a chicken and egg game. <b>If no one will use Disque as a production system, it won’t be able to mature</b>.</p>
+<p>Redis started as infrastructure for a product Salvatore was working on and got battle tested from day one. I hope there will be enough courageous people to try Disque out in real world scenarios for it to gain stability. Personally I’m going to stand on the sidelines a little while longer, but when it does stabilize enough, it’s certainly a great candidate, combining simplicity and ease of use, with scalability and performance.</p>

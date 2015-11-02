@@ -1,0 +1,49 @@
+---
+layout: post
+title: 'HackAthing #2 is almost here'
+date: 2012-11-12 18:31:07.000000000 +02:00
+type: post
+published: true
+status: publish
+categories:
+- FED
+- hackathing
+tags: []
+meta:
+  _edit_last: '22'
+  dsq_thread_id: ''
+author:
+  login: ranbena
+  email: ran@doat.com
+  display_name: Ran Ben Aharon
+  first_name: Ran
+  last_name: Ben Aharon
+---
+<p><a href="http://hackathing.me">HackAthing</a> is Everything's periodical hackathon. This Thursday (15th) we're <a href="http://www.w3c.org.il/event/314">teaming up with W3C</a> and some 50 participants will be knee deep in HTML5 mobile webapps accompanied by Front End mentors, content and design experts and lots of fuel in the fridge.</p>
+<p>It’ll start off with two extremely relevant lectures by Doron Nir on Gaming and yours truly on Mobile webapps. Afterwards we’ll talk over project ideas, split into groups and dive into code.</p>
+<p><img class="alignnone size-full wp-image-374" title="devices" alt="" src="{{ site.baseurl }}/assets/devices.jpg" width="688" height="478" /><br />
+<!--more--><br />
+In my talk about Mobile Webapps I’ll touch key issues with development environment and debugging. Still, it could be helpful to prep up beforehand. So here’s the gist:<!--more--></p>
+<h1>Get access to your localhost from your mobile device</h1>
+<p>The best and easiest method is via a proxy client on your host computer and a simple (yet evasive) Wifi setting on your mobile device. Once you set it, any local url will be accessible without having to fiddle with your hosts file.<br />
+As a bonus, all mobile network traffic can be monitored via the proxy app.</p>
+<p>For Windows I recommend <a href="www.fiddler2.com" target="_blank">Fiddler</a>. For Mac and Linux I go for <a href="http://www.charlesproxy.com/" target="_blank">Charles</a> but <a href="http://www.wireshark.org/" target="_blank">WireShark</a> will do if you know how to operate it.</p>
+<p>Unfortunately, not all device operating systems have a proxy setting available. One workaround would be to simply browse to the local machine’s ip address (which has to be on the same network as the device) and make sure the site you’re working on is the default site of the web server.</p>
+<p>There are quite a few more methods like using <a href="http://progrium.com/localtunnel/" target="_blank">localtunnel</a>, creating a hotspot and using a simulator or emulator.</p>
+<h1>Debugging and logging</h1>
+<p>Neither Android nor iOS (as of version 6) expose a log viewer within the device. This means a desktop comp must be used.<br />
+On Android, using the terminal command “adb logcat” will get you going with simple terminal viewer. This requires installing the <a href="http://developer.android.com/sdk/index.html" target="_blank">Android SDK</a> and it’s platform tools. I’ll show how in my <a href="http://www.w3c.org.il/HTML5fest/2012/lecturers.php?course_id=2&amp;session_id=1&amp;lecturer_id=2">HTML5Fest talk</a>.</p>
+<p>On iOS you gotta have a Mac with Safari 6. Yeah, I know… still the <a href="http://developer.apple.com/library/ios/#documentation/AppleApplications/Reference/SafariWebContent/DebuggingSafarioniPhoneContent/DebuggingSafarioniPhoneContent.html" target="_blank">toolset they provide</a> is the most comprehensive in mobile web debugging and if you get your hands on it you’ll be a happy camper.</p>
+<p>One alternative to these is <a href="http://people.apache.org/~pmuellr/weinre/docs/latest/" target="_blank">Weiner</a> and it’s derivatives <a href="http://html.adobe.com/edge/inspect/" target="_blank">Adobe Edge Inspect</a> and <a href="https://trigger.io/" target="_blank">trigger.io</a>.</p>
+<h1>Advanced APIs</h1>
+<p>Mobile web development has its rewards. Taking advantage of the webkit’s reliable rendering engine and advanced features in combination with mobile device capabilities – well, it makes it all worth while.</p>
+<p>We’ll explore some of the features like the awesome Web Audio API (here's an <a href="http://www.slideshare.net/ranbena/web-audio-api-in-15-min" target="_blank">introduction slideshow</a> I had recently), device motion, orientation and touch events, geolocation data retrieval, css animations and much more.</p>
+<h2>Mobile web dev links to get you started</h2>
+<ul style="list-style-type: disc;">
+<li><a href="http://caniuse.com" target="_blank">caniuse.com</a> and <a href="http://mobilehtml5.org/">mobilehtml5.org</a> will let you know if a feature is supported on mobile browsers</li>
+<li><a href="https://developer.apple.com/library/safari/#documentation/AppleApplications/Reference/SafariWebContent/HandlingEvents/HandlingEvents.html#//apple_ref/doc/uid/TP40006511-SW1">Understanding touch events</a></li>
+<li><a href="https://developer.apple.com/library/safari/#documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html#//apple_ref/doc/uid/TP40006509-SW1">Configuring the viewport</a></li>
+<li><a href="http://vimeo.com/49194960">A talk about mobile web performance</a></li>
+<li><a href="http://www.youtube.com/watch?v=qspJiaIIIKI&amp;list=UUwpsHM5fqVoX8r5DQu1-BAg&amp;index=100&amp;feature=plcp">My lecture on Mobile Web dev in the 2011 HTML5Fest</a></li>
+</ul>
+<p>So, are you excited? We sure are. Working on cool projects with aces - what could be better?</p>

@@ -1,0 +1,157 @@
+---
+layout: post
+title: Choosing a javascript test framework
+date: 
+type: post
+published: false
+status: draft
+categories: []
+tags: []
+meta:
+  _edit_last: '2'
+author:
+  login: ranbena
+  email: ran@doat.com
+  display_name: Ran Ben Aharon
+  first_name: Ran
+  last_name: Ben Aharon
+---
+<p>Developing a web app targeted for multiple devices and browsers can make the development process very complex and thus easily breakable. Any change might cause regression and QA test cycles are wrongly used as alert systems. Involving automated tests in to the development process is the crucial to a healthy and wasteless development process.<br />
+In our quest for finding the best javascript testing framework suited for our needs, we want to share our thoughts and considerations to make it easier for you.</p>
+<h3>Post commit run</h3>
+<p>In order to make sure we don't deploy a test failed version, tests have to run as a part of our build process. Therefore, the following features had to be supported by the test framework:</p>
+<ul>
+<li>Environment agnostic - tests will be run on multiple browser engines so the framework shouldn't have any dependency on browser abilities.</li>
+<li>Command line triggered - so our CI server could run tests all on it's own.</li>
+<li>Machine readable output - in order for the CI server to understand the test results, they have to come in a form of outputted text xUnit convention</li>
+</ul>
+<p></p>
+<h3>Test run on mobile browser</h3>
+<p>Desktop browser tests are helpful but we need the tests to run on the mobile browsers themselves as well. This can be achieved by having "Distributed Testing" which means a server is set up to communicate with slave browsers from remote machines (such as a mobile device). This can be integrated into an automated test run by using dedicated devices. Another way would be to have the local dev machine (or a dedicated one) run a mobile device emulator/simulator like the Mac iOS simulator or the JDK Android emulator.<br />
+<a href="http://selenium-grid.seleniumhq.org/" title="Selenium Grid" target="_blank">Selenium Grid</a> for <a href="http://seleniumhq.org/" target="_blank">Selenium</a>, <a href="http://www.jsunit.net/" target="_blank">JSUnit server</a> for <a href="http://www.jsunit.net/">JSUnit</a>, <a href="http://yuilibrary.com/projects/yeti/" target="_blank">Yeti</a> for <a href="http://yuilibrary.com/yui/docs/test/" target="_blank">YUI Test</a> and <a href="http://swarm.jquery.org/" target="_blank">TestSwarm</a> for <a href="http://docs.jquery.com/QUnit" target="_blank">qUnit</a> might be adequate.</p>
+<p>If you don't want a pesky browser pop up every time you run your tests, we recommend running them on a headless browser. This means it's a fully working browser (javascript engine, DOM parser) only it has no UI. It's fast and can be run on any machine via command line. We found <a href="http://trac.webkit.org/wiki/QtWebKit" target="_blank">QTWebkit</a>, <a href="https://github.com/guard/guard-jasmine-headless-webkit" target="_blank">jasmine-headless-webkit</a>, <a href="http://www.phantomjs.org/" target="_blank">PhantomJs</a>, <a href="http://zombie.labnotes.org/" target="_blank">ZombieJs</a> and <a href="http://www.envjs.com/" target="_blank">EnvJs</a> are worth looking at.</p>
+<h3>Event simulation</h3>
+<p>Functional tests are covered by all test frameworks. We want to add GUI testing as well. This can only be achieved by a framework that implements event simulation. <a href="http://seleniumhq.org/" target="_blank">Selenium</a>, <a href="http://htmlunit.sourceforge.net/" target="_blank">HTMLUnit</a> and <a href="http://yuilibrary.com/yui/docs/test/" target="_blank">YUI Test</a> might be good candidates.</p>
+<h3>Open source</h3>
+<p>We favor <a href="https://github.com/doat" target="_blank">open source projects</a> because it enables us to easily communicate with the dev team regarding bug reporting, feature requests and questions. Also, we like to give back and share our own enhancements with everybody else. So, that's another consideration.</p>
+<h3>Actively maintained</h3>
+<p>Lastly, we want to know it's an active project that will be around for a while and will progress as the field does.</p>
+<p>Here's a summary of our needs and what frameworks offer:</p>
+<style>
+table{ background-color: white; border-collapse: collapse; padding: 5px; display:block;}<br />
+td{text-align: center; font-size: 12px; height: 30px; color: black;border: 1px solid black;}<br />
+.no {color: lightgray}<br />
+</style>
+<table>
+<tr>
+<td>Framework</td>
+<td>command line</td>
+<td>Environment agnostic</td>
+<td>Machine readable output</td>
+<td>Runnable on remote machines</td>
+<td>Event simulation</td>
+<td>Open source</td>
+<td>Active</td>
+</tr>
+<tr>
+<td><a href="http://pivotal.github.com/jasmine/">Jasmine</a> (Pivotal Labs)</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>?</td>
+<td class="no">N</td>
+<td><a href="https://github.com/pivotal/jasmine">Y</a></td>
+<td>Y</td>
+</tr>
+<tr>
+<td><a href="http://www.jsunit.net/">JSUnit</a> (Pivotal Labs)</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td class="no">N</td>
+<td><a href="https://github.com/pivotal/jsunit">Y</a></td>
+<td class="no">N</td>
+</tr>
+<tr>
+<td>QUnit (jQuery)</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td class="no">N</td>
+<td class="no">N</td>
+<td>Y <a href="https://github.com/jquery/qunit">github</a></td>
+<td class="no">N</td>
+</tr>
+<tr>
+<td>YUI test</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>JS-test-driver</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>nodeunit</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>JSSpec</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Buster</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Mocha</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>JSUnity</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</table>
+<p>Eventually we chose XXXX as our functional test framework and XXXX as our UI test framework.</p>

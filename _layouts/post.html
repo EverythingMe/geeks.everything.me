@@ -1,0 +1,46 @@
+---
+layout: default
+---
+<article class="post type-post status-publish format-standard hentry">
+  <header class="entry-header">
+    <h1 class="entry-title">{{ page.title }}</h1>
+    <div class="entry-meta">
+      <time class="entry-date" datetime="{{ page.date | date: "%B %-d, %Y" }}" pubdate="">{{ page.date | date: "%B %-d, %Y" }}</time>
+      <span class="by-author">
+        <span class="sep"> by </span>
+        <span class="author vcard">{{ page.author.display_name }}</span>
+      </span>
+    </div><!-- .entry-meta -->
+
+  </header><!-- .entry-header -->
+
+  <div class="entry-content">
+    {{ content }}
+    <div class="socialshare clearfix">
+        <div class="fb-like" data-send="false" data-layout="button_count" data-width="90" data-show-faces="false" data-action="like" data-font="arial"></div>
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis addthis_toolbox addthis_default_style">
+            <span class="share">Share:</span>
+            <a href="#" class="addthis_button_facebook"></a>
+            <a href="#" class="addthis_button_twitter"></a>
+            <a href="#" class="addthis_button_google_plusone_share"></a>
+            <a href="#" class="addthis_button_compact"></a>
+            <script type="text/javascript">
+                var addthis_config = {
+                    "services_compact" : "reddit, linkedin, email, more",
+                    "ui_hover_direction" : 1,
+                    "ui_offset_top" : 10,
+                    "data_track_clickback" : true
+                };
+            </script>
+            <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-508938e5538c5c48"></script>
+            <script type="text/javascript">
+                addthis.addEventListener('addthis.ready', function(evt){
+                    $('.addthis span.share').css('display', 'block');
+                });
+            </script>
+        </div>
+        <!-- AddThis Button END -->
+    </div>
+  </div><!-- .entry-content -->
+</article>

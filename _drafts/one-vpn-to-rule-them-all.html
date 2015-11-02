@@ -1,0 +1,50 @@
+---
+layout: post
+title: One VPN to rule them all
+date: 
+type: post
+published: false
+status: draft
+categories:
+- AWS
+- Operations
+tags: []
+meta:
+  _edit_last: '14'
+author:
+  login: omrib
+  email: omrib@everything.me
+  display_name: omrib
+  first_name: Omri
+  last_name: Bahumi
+---
+<p>Here at EverythingMe we never trusted multi-AZ for redundancy. History proves that only a fraction of the AWS outages didn't effect all availability zones.<br />
+That's why our design &amp; architecture utilize multi-region for redundancy, rather than multi-AZ.</p>
+<p>When trying to build a multi-region architecture we faced some challenges. To understand them a bit better, one must first understand our architecture:</p>
+<ol>
+<li>Chef manages our configuration</li>
+<li>Zookeeper (alongside with Netflix Exhibitor) manages our endpoint configurations (we use chef to configure our endpoints as well, both for bootstrapping purposes and for Zookeeper maintenance/failure)</li>
+<li>A watchdog service running on all machines examines the health of the services, registering them in Zookeeper.</li>
+</ol>
+<p>All these endpoint management tools use internal IP addresses (when you launch an instance in EC2 you get "two" IP addresses: an internal one (10.x.x.x) and a routeable one) for several reasons:</p>
+<ol>
+<li>Trust relations between two security groups doesn't work when using routeable IP addresses. If you want servers to communicate using their routeable IP address, the originating IP address must be explicitly defined in the destination's security group.</li>
+<li>Traffic within the same AZ is free when you're using the internal IP address</li>
+<li>Using the routeable IP address introduces another routing hop, which is another point of failure (and possibly more latency)</li>
+</ol>
+<p>One might say: AWS provides public-hostname for every instance just for that. This is actually right. When resolving an instance public-hostname from within the same AWS region, you'll get the internal IP address. When resolving it externally, you get the routeable IP address of the instance. The problem with this approach is AWS coupling. That's another thing you have to consider when looking for an alternative cloud, or building one of your own.</p>
+<p>If you decided not to go with DNS and stick with IP addresses, you'll have a problem: when configuring two instances to communicate with each other, do we use the internal IP address or the routeable IP address?<br />
+That depends on what regions the instances are located. This is a mechanism we would have to implement across all our configuration management tools - a big pain in the ass. Not to mention we should either open our security groups wide open for inter-region communication, or modify them dynamically with API calls - both are not fun, and do not scale.</p>
+<p>Another constraint I forgot to mention: all communication crossing WAN should be encrypted. We don't want our users' private information being eavesdropped, don't we?<br />
+This means that everything we're running across WAN (Redis replication, MySQL replication, etc.) should be encrypted. These kind of solutions tend to either be a huge management overhead (managing a proper PKI infrastructure), or a permissive SSL settings (such as self-signed certificates without a CA) - exposing yourself to MITM attacks. Not to mention not all services support SSL out of the box, and we'd have to utilize stunnel for those.</p>
+<p>What if I could tell you I could solve all these problems easily, and gain an addition advantage of having the inter-region traffic compressed on the way?<br />
+The solution is simple - VPC + OpenVPN. When using VPC you can control the internal address space yourself and have routing control.<br />
+With our design, every region has a different <a href="http://en.wikipedia.org/wiki/Cidr" target="_blank">CIDR</a> subnet. Traffic between regions is routed through OpenVPN, meaning:</p>
+<ol>
+<li>Every instance's private IP address is accessible from all regions</li>
+<li>Traffic within the same region is unaffected</li>
+<li>Traffic between regions is automatically encrypted &amp; compressed</li>
+<li>Security groups are not opened internet-wide, rather VPC-wide</li>
+</ol>
+<p>In my next post I'm going to elaborate on the setup, giving you all the tools necessary to do the same on your organization.</p>
+<p>&nbsp;</p>

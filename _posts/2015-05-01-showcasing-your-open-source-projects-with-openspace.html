@@ -1,0 +1,31 @@
+---
+layout: post
+title: Showcasing your open source projects with OpenSpace
+date: 2015-05-01 09:58:32.000000000 +03:00
+type: post
+published: true
+status: publish
+categories: []
+tags: []
+meta:
+  _edit_last: '4'
+  dsq_thread_id: ''
+author:
+  login: joey
+  email: joey@everything.me
+  display_name: joey
+  first_name: Joey
+  last_name: Simhon
+---
+<p>As a company that bases much of its technology on open source projects, we’ve been contributing and opening up internally built tools ever since we started.</p>
+<p>As time passed, we’ve reached a point where our organization on GitHub holds a combination of internal tools, forks of projects we’re using and contributed to and some less interesting bits.</p>
+<p>We wanted to share our work with the world, and do it in a way that covers the wide range of disciplines and challenges our team deals with - from Web and Android on the client-side through Python, Go on the server and the Cloud and Analytics tools we’re building and using on a daily basis.</p>
+<p>This is where <a href="http://github.com/EverythingMe/openspace" target="_blank">OpenSpace</a> comes in - a simple web app to showcase your GitHub projects.</p>
+<p><img class="alignnone size-medium wp-image-906" src="{{ site.baseurl }}/assets/dawg04-688x387.jpg" alt="Xzibit" width="688" height="387" /></p>
+<h2><b>Look &amp; Feel</b></h2>
+<p>When I first laid my eyes on <a href="https://mixitup.kunkalabs.com/" target="_blank">MixItUp</a> by KunkaLabs I knew this is how I wanted our showcase to look and behave, and with the help of <a href="https://github.com/ranbena" target="_blank">@ranbena</a> the great, we’ve created a simple, clean and material’ish looking site.</p>
+<p><a href="http://everythingme.github.io"><img class="alignnone wp-image-908" src="{{ site.baseurl }}/assets/openspace.jpg" alt="openspace" width="688" height="361" /></a></p>
+<p>We’ve color-coded every project based on its name <a href="https://gist.github.com/joeysim/694a2e6a2fb072a86138" target="_blank">in a consistent way</a>, similar to how we give each contact on your phone a color if there’s no image attached to it on the Quick Contacts panel of our <a href="https://play.google.com/store/apps/details?id=me.everything.launcher&amp;referrer=utm_source%3Dgeeks.everything.me%26utm_medium%3Dlink%26utm_campaign%3DOpenSpace%2520post" target="_blank">Launcher</a>.</p>
+<h2><b>Fetching the data</b></h2>
+<p>We’ve used GitHub’s open API to access our organization public repos, filtering out those that are forks and also filtering some that are less relevant. We’ve built <a href="https://github.com/EverythingMe/openspace/blob/master/data/prepare_data.py§" target="_blank">a Python tool</a> to do the job so we can later automate the updating of the data rather than manually edit the static json file that powers the site.</p>
+<p>Our <a href="http://everythingme.github.io/" target="_blank">showcase site</a> is up, if you ever want to showcase your open source projects from GitHub - take <a href="https://github.com/EverythingMe/openspace" target="_blank">OpenSpace</a> for spin and see if it gets the job done.</p>

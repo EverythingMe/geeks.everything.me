@@ -1,0 +1,11 @@
+# Site settings
+title: EverythingMe Engineering Blog
+email: system@everything.me
+description: We're doing all the geeky stuff at EverythingMe
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://geeks.everything.me" # the base hostname & protocol for your site
+permalink:    /:year/:month/:day/:title/
+
+# Build settings
+markdown: kramdown
+

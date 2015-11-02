@@ -1,0 +1,55 @@
+---
+layout: post
+title: Gmail for iOS Hybrid implementation
+date: 2012-12-09 12:31:22.000000000 +02:00
+type: post
+published: true
+status: publish
+categories:
+- FED
+- iOS
+tags: []
+meta:
+  dsq_thread_id: ''
+  _edit_last: '18'
+author:
+  login: admin
+  email: devops@doat.com
+  display_name: evmegeeks
+  first_name: evmegeeks
+  last_name: ''
+---
+<p>Google recently released its new <a href="https://itunes.apple.com/app/gmail/id422689480?mt=8" target="_blank">Gmail app for iOS</a> and got the web excited about the possibly rebranded Sparrow client that Google bought <a href="http://www.theverge.com/2012/7/20/3172222/google-buys-sparrow-mail" target="_blank">back in july</a>.</p>
+<p>I've downloaded the new client and it really is a big improvement from the last version, but still something was a bit off...<br />
+<!--more--><br />
+The first thing I noticed was a strange pixelation when zooming in on the content of a message:</p>
+<figure class="alignleft"><img src="{{ site.baseurl }}/assets/01.jpg" alt="Gmail for iOS - Blurry Text" width="334" height="300" /><br />
+<figcaption>Gmail for iOS</figcaption>
+</figure>
+<figure class="alignright"><img src="{{ site.baseurl }}/assets/02.jpg" alt="Apple Mail.app - Crisp Text" width="334" height="300" /><br />
+<figcaption>Apple Mail.app</figcaption>
+</figure>
+<p>Compared to Apples Mail.app Gmail does a pretty bad job, strange.</p>
+<p>Having seen that I decided to explore further.<!--more--> Looking at the default message view you'll guess the message content is displayed using UIWebview, nothing special, but playing around with the UI elements revealed the following:</p>
+<p><img title="Selectable UI Elements" src="{{ site.baseurl }}/assets/03.jpg" alt="Selectable UI Elements" /></p>
+<p>The Toolbar is selectable, a clear sign it was implemented using a UIWebView. This repeats itself in other UI elements across the app:</p>
+<p><img title="Another Example of Selectable UI Elements" src="{{ site.baseurl }}/assets/04.jpg" alt="Another Example of Selectable UI Elements" border="0" /></p>
+<p>At this point I fired <a href="http://www.ecamm.com/mac/phoneview/" target="_blank">PhoneView</a> and copied the Gmail app to my machine. The app was named <strong>GmailHybrid.app</strong> so I had a good feeling about it using UIWebview :)</p>
+<p>Inside the app bundle you'll find a list of JavaScript files, including one interestingly named: <code>GIPSuperWebViewInit.js</code></p>
+<p><script src="https://gist.github.com/4244298.js"></script></p>
+<p>You'll notice the initialization of an iframe, and the <code>dispatch</code> function used for communication with the native portion of the app.</p>
+<p>Some other JavaScript files included in the Gmail app bundle are:</p>
+<ul>
+<li>GIPSuperWebViewActionMenu.js</li>
+<li>GIPSuperWebViewGps.js</li>
+<li>GIPSuperWebViewMediaPicker.js</li>
+<li>GIPSuperWebViewNetworkActivity.js</li>
+<li>GIPSuperWebViewRpc.js</li>
+<li>GIPSuperWebViewSpeech.js</li>
+<li>GmailNativeMessagingBridge.js</li>
+<li>GmailTopToolbarMessagingBridge.js</li>
+</ul>
+<p>A mix of UI elements (e.g. <code>GmailTopToolbarMessagingBridge.js</code>) and Hardware related functionality like the GPS or Speech recognition.</p>
+<p>Most of the talk around the web about the new app mentions the new "native" implementation, but as you can clearly see It's not a fully native app, but a hybrid app with carefully crafted web elements.</p>
+<p>Google made a big effort with its Hybrid implementation to give users a native-like experience while maintaining the flexibility web development gives you in terms of remote update etc. Although not perfect, it's one of the best hybrid apps I've seen in a long time.</p>
+<p>Let's hope this trend continues and gives developers and users the best of both worlds.</p>
