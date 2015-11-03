@@ -8,7 +8,7 @@ layout: default
       <time class="entry-date" datetime="{{ page.date | date: "%B %-d, %Y" }}" pubdate="">{{ page.date | date: "%B %-d, %Y" }}</time>
       <span class="by-author">
         <span class="sep"> by </span>
-        <span class="author vcard">{{ page.author.display_name }}</span>
+        <span class="author vcard">{{ page.author.first_name }} {{ page.author.last_name }}</span>
       </span>
     </div><!-- .entry-meta -->
 

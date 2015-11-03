@@ -12,7 +12,7 @@ layout: default
         <time class="entry-date" datetime="{{ post.date | date: "%b %-d, %Y" }}" pubdate="">{{ post.date | date: "%b %-d, %Y" }}</time>
         <span class="by-author">
           <span class="sep"> by </span>
-          <span class="author vcard">{{ post.author.display_name }}</span>
+          <span class="author vcard">{{ post.author.first_name }} {{ post.author.last_name }}</span>
         </span>
       </div><!-- .entry-meta -->
 

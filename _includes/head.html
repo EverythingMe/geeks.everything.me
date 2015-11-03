@@ -1,6 +1,6 @@
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <title>{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}</title>
@@ -8,4 +8,33 @@
 
     <link rel="stylesheet" href="{{ "/css/main.css" | prepend: site.baseurl }}">
     <link rel="canonical" href="{{ page.url | replace:'index.html','' | prepend: site.baseurl | prepend: site.url }}">
+
+
+    <link rel="shortcut icon" href="http://geeks.everything.me/wp-content/themes/geeks/images/favicon.ico?cb=1" />
+    <!--[if lt IE 9]>
+    <link rel="stylesheet" type="text/css" media="all" href="http://geeks.everything.me/wp-content/themes/geeks/ie.css" />
+    <script src="http://geeks.everything.me/wp-content/themes/geeks/js/html5.js" type="text/javascript"></script>
+    <![endif]-->
+
+    <meta name="keywords" itemprop="keywords" content="everythingme, launcher, engineering, android, python, go" />
+    <link rel='next' href='http://geeks.everything.me/page/2/' />
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-16876190-10']);
+
+        if (typeof _USER !== 'undefined' && _USER){
+            _gaq.push(['_setCustomVar', 1, 'User', _USER.name, 1]);
+        }
+
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
 </head>
